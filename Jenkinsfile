@@ -9,7 +9,7 @@ node {
               -v "$WORKSPACE:/src" \
               -w /src \
               mcr.microsoft.com/dotnet/sdk:10.0 \
-              dotnet build TodoApp/TodoApp.csproj
+              sh -c "ls -la && find . -name '*.csproj' && dotnet build ./TodoApp/TodoApp.csproj"
         '''
     }
 
@@ -19,7 +19,7 @@ node {
               -v "$WORKSPACE:/src" \
               -w /src \
               mcr.microsoft.com/dotnet/sdk:10.0 \
-              dotnet test TodoApp.Tests/TodoApp.Tests.csproj
+              sh -c "dotnet test ./TodoApp.Tests/TodoApp.Tests.csproj"
         '''
     }
 }
