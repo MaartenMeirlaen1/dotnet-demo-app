@@ -27,7 +27,17 @@ stage('Test') {
           mariadb:11
 
         echo "Waiting for MariaDB..."
-        sleep 15
+
+        until docker exec todoappdb-test \
+            mariadb-admin ping \
+            -utodo_usr \
+            -pletmeinplz \
+            --silent
+        do
+            sleep 2
+        done
+
+        echo "MariaDB is ready!"
 
         docker exec -i todoappdb-test \
           mariadb -utodo_usr -pletmeinplz todo_test_db \
