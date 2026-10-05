@@ -3,13 +3,23 @@ node {
         checkout scm
     }
 
-    stage('Check files') {
+    stage('Build') {
         sh '''
-            echo "=== ROOT ==="
-            ls -la
+            docker run --rm \
+              -v "$WORKSPACE:/src" \
+              -w /src \
+              mcr.microsoft.com/dotnet/sdk:10.0 \
+              dotnet build TodoApp/TodoApp.csproj
+        '''
+    }
 
-            echo "=== PROJECTS ==="
-            find . -name "*.csproj" -o -name "*.sln"
+    stage('Test') {
+        sh '''
+            docker run --rm \
+              -v "$WORKSPACE:/src" \
+              -w /src \
+              mcr.microsoft.com/dotnet/sdk:10.0 \
+              dotnet test TodoApp.Tests/TodoApp.Tests.csproj
         '''
     }
 }
