@@ -15,7 +15,7 @@ node {
 
 stage('Test') {
     sh '''
-        docker network create todo-test-network || true
+        docker network create todo-test-network
 
         docker run -d \
           --name todoappdb-test \
