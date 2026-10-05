@@ -1,3 +1,4 @@
+```groovy
 node {
     stage('Preparation') {
         checkout scm
@@ -65,5 +66,54 @@ node {
             docker network rm todo-test-network
         '''
     }
-}
 
+    stage('Deploy') {
+        sh '''
+            docker network create todo-app-network || true
+
+            docker rm -f todoappdb >/dev/null 2>&1 || true
+            docker rm -f todoapp >/dev/null 2>&1 || true
+
+            docker run -d \
+              --name todoappdb \
+              --network todo-app-network \
+              -e MARIADB_ROOT_PASSWORD=sekrit \
+              -e MARIADB_DATABASE=todo_db \
+              -e MARIADB_USER=todo_usr \
+              -e MARIADB_PASSWORD=letmeinplz \
+              mariadb:11
+
+            echo "Waiting for deployment database..."
+
+            until docker exec todoappdb \
+                mariadb-admin ping \
+                -uroot \
+                -psekrit \
+                --silent; do
+                sleep 2
+            done
+
+            echo "Database is ready!"
+
+            docker exec jenkins_server \
+              cat /var/jenkins_home/workspace/DotnetDemoPipeline/TodoApp/schema.sql \
+              | docker exec -i todoappdb \
+              mariadb -utodo_usr -pletmeinplz todo_db
+
+            docker build \
+              -t todoapp:latest \
+              /var/jenkins_home/workspace/DotnetDemoPipeline/TodoApp
+
+            docker run -d \
+              --name todoapp \
+              --network todo-app-network \
+              -p 8080:8080 \
+              -e ConnectionStrings__TodoDb="Server=todoappdb;Port=3306;Database=todo_db;User=todo_usr;Password=letmeinplz;" \
+              todoapp:latest
+
+            echo "Deployment completed!"
+            echo "Application: http://172.16.0.10:8080"
+        '''
+    }
+}
+```
